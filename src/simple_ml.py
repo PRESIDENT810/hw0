@@ -1,6 +1,9 @@
+from util import *
+
 import struct
 import numpy as np
 import gzip
+
 try:
     from simple_ml_ext import *
 except:
@@ -19,9 +22,7 @@ def add(x, y):
     Return:
         Sum of x + y
     """
-    ### BEGIN YOUR CODE
     return x + y
-    ### END YOUR CODE
 
 
 def parse_mnist(image_filename, label_filename):
@@ -47,9 +48,9 @@ def parse_mnist(image_filename, label_filename):
                 labels of the examples.  Values should be of type np.uint8 and
                 for MNIST will contain the values 0-9.
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
+    images = parse_images(image_filename)
+    labels = parse_labels(label_filename)
+    return images, labels
 
 
 def softmax_loss(Z, y):
@@ -67,9 +68,8 @@ def softmax_loss(Z, y):
     Returns:
         Average softmax loss over the sample.
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
+    loss = np.log(np.sum(np.exp(Z), axis=1))-Z[np.arange(len(Z)), y]
+    return np.mean(loss)
 
 
 def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
@@ -90,10 +90,16 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
     Returns:
         None
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
-
+    iterations = int(X.shape[0]/batch)
+    for iteration in range(iterations):
+        X_batch = X[iteration*batch:(iteration+1)*batch]
+        y_batch = y[iteration*batch:(iteration+1)*batch]
+        Z = np.exp(X_batch@theta)
+        Z = Z/np.sum(Z, axis=1).reshape(batch, 1)
+        Iy = np.zeros(Z.shape)
+        Iy[np.arange(len(y_batch)), y_batch] = 1
+        gradient = X_batch.transpose()@(Z-Iy)/batch
+        theta -= lr*gradient
 
 def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
     """ Run a single epoch of SGD for a two-layer neural network defined by the
@@ -117,10 +123,23 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
     Returns:
         None
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
-
+    iterations = int(X.shape[0] / batch)
+    for iteration in range(iterations):
+        X_batch = X[iteration * batch:(iteration + 1) * batch]
+        y_batch = y[iteration * batch:(iteration + 1) * batch]
+        m, n = X_batch.shape
+        d, k = W2.shape
+        Z1 = np.maximum(0, X_batch@W1)
+        G2 = np.exp(Z1@W2)
+        G2 = G2/np.sum(G2, axis=1).reshape(batch, 1)
+        Iy = np.zeros((m, k))
+        Iy[np.arange(len(y_batch)), y_batch] = 1
+        G2 -= Iy
+        G1 = np.where(Z1 > 0, 1, 0)*(G2@W2.transpose())
+        gradient1 = (X_batch.transpose()@G1)/batch
+        gradient2 = (Z1.transpose()@G2)/batch
+        W1 -= gradient1*lr
+        W2 -= gradient2*lr
 
 
 ### CODE BELOW IS FOR ILLUSTRATION, YOU DO NOT NEED TO EDIT
